@@ -3,116 +3,117 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>みんなの予想箱</title>
+    <title>Yosou Markets</title>
     <meta
       name="description"
-      content="選挙結果、スポーツ、経済、エンタメなどの未来をみんなで予想して集計できるサイトです。"
+      content="選挙、スポーツ、経済、ニュースをみんなで予想するマーケット型コミュニティです。"
     />
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <header class="app-header">
-      <a class="brand" href="#top" aria-label="みんなの予想箱 ホーム">
-        <span class="brand-mark" aria-hidden="true">予</span>
-        <span>みんなの予想箱</span>
+    <header class="topbar">
+      <a class="brand" href="#markets" aria-label="Yosou Markets">
+        <span class="brand-mark">Y</span>
+        <span>Yosou Markets</span>
       </a>
-      <nav class="nav" aria-label="主要ナビゲーション">
-        <a href="#topics">予想テーマ</a>
-        <a href="#create">作成</a>
-        <a href="#activity">履歴</a>
-      </nav>
+      <label class="search">
+        <span aria-hidden="true">⌕</span>
+        <input id="searchInput" type="search" placeholder="マーケットを検索" />
+      </label>
+      <div class="topbar-actions">
+        <span id="connectionBadge" class="badge muted">Demo DB</span>
+        <button id="createMarketButton" class="button ghost" type="button">作成</button>
+        <button id="loginButton" class="button dark" type="button">ログイン</button>
+      </div>
     </header>
 
-    <main id="top">
-      <section class="hero" aria-labelledby="hero-title">
-        <div class="hero-copy">
-          <p class="eyebrow">Crowd Forecasting</p>
-          <h1 id="hero-title">選挙結果も、次の出来事も、みんなで予想する。</h1>
-          <p>
-            政治、スポーツ、経済、エンタメなどのテーマを作り、
-            選択肢・確信度・理由を投稿できます。集計はその場で更新されます。
-          </p>
-          <div class="hero-actions">
-            <a class="button primary" href="#topics">予想に参加</a>
-            <a class="button secondary" href="#create">テーマを作る</a>
-          </div>
+    <main class="shell">
+      <aside class="sidebar" aria-label="カテゴリ">
+        <button class="topic-tab active" type="button" data-category="all">Trending</button>
+        <button class="topic-tab" type="button" data-category="選挙">Politics</button>
+        <button class="topic-tab" type="button" data-category="スポーツ">Sports</button>
+        <button class="topic-tab" type="button" data-category="経済">Finance</button>
+        <button class="topic-tab" type="button" data-category="ニュース">News</button>
+        <button class="topic-tab" type="button" data-category="エンタメ">Culture</button>
+        <button class="topic-tab" type="button" data-category="その他">Other</button>
+        <div class="sidebar-card">
+          <strong>共有DB</strong>
+          <p>Supabase設定を入れると、投稿・コメント・ランキングが全員に共有されます。</p>
         </div>
+      </aside>
 
-        <aside class="live-panel" aria-label="注目テーマの集計">
-          <div class="panel-top">
-            <span class="status-dot"></span>
-            <span>LIVE CONSENSUS</span>
-          </div>
-          <h2>架空市長選 2026</h2>
-          <div class="forecast-bars" aria-hidden="true">
-            <div style="--value: 46">
-              <span>現職候補</span>
-              <b>46%</b>
-            </div>
-            <div style="--value: 34">
-              <span>新人候補</span>
-              <b>34%</b>
-            </div>
-            <div style="--value: 20">
-              <span>無所属候補</span>
-              <b>20%</b>
-            </div>
-          </div>
-          <canvas id="trendCanvas" width="540" height="220" aria-label="予想推移グラフ"></canvas>
-        </aside>
-      </section>
-
-      <section class="stats" aria-label="サイトの状態">
-        <article>
-          <span id="statTopics">0</span>
-          <p>公開中テーマ</p>
-        </article>
-        <article>
-          <span id="statPredictions">0</span>
-          <p>投稿された予想</p>
-        </article>
-        <article>
-          <span id="statAverage">0%</span>
-          <p>平均確信度</p>
-        </article>
-      </section>
-
-      <section id="topics" class="workspace" aria-labelledby="topics-title">
-        <div class="section-head">
+      <section id="markets" class="market-column" aria-labelledby="marketTitle">
+        <div class="column-head">
           <div>
-            <p class="eyebrow">Topics</p>
-            <h2 id="topics-title">予想テーマ</h2>
+            <p class="eyebrow">Prediction Markets</p>
+            <h1 id="marketTitle">注目マーケット</h1>
           </div>
-          <div class="filters" role="list" aria-label="カテゴリーフィルター">
-            <button class="filter active" type="button" data-filter="all">すべて</button>
-            <button class="filter" type="button" data-filter="選挙">選挙</button>
-            <button class="filter" type="button" data-filter="スポーツ">スポーツ</button>
-            <button class="filter" type="button" data-filter="経済">経済</button>
-            <button class="filter" type="button" data-filter="その他">その他</button>
+          <div class="stats-strip" aria-label="統計">
+            <span><b id="statMarkets">0</b> markets</span>
+            <span><b id="statPredictions">0</b> predictions</span>
+            <span><b id="statResolved">0</b> resolved</span>
           </div>
         </div>
-        <div id="topicGrid" class="topic-grid" aria-live="polite"></div>
+        <div id="marketList" class="market-list" aria-live="polite"></div>
       </section>
 
-      <section id="create" class="create-section" aria-labelledby="create-title">
-        <div>
-          <p class="eyebrow">Create</p>
-          <h2 id="create-title">新しい予想テーマを作る</h2>
-          <p>
-            選択肢はカンマ区切りで入力してください。作成したテーマはこのブラウザに保存されます。
-          </p>
+      <aside class="detail-column" aria-label="マーケット詳細">
+        <section id="marketDetail" class="detail-card"></section>
+        <section class="leaderboard-card">
+          <div class="card-head">
+            <h2>的中率ランキング</h2>
+            <span id="rankingScope">Resolved</span>
+          </div>
+          <div id="leaderboardList" class="leaderboard-list"></div>
+        </section>
+      </aside>
+    </main>
+
+    <dialog id="authDialog" class="dialog">
+      <form id="authForm" class="dialog-body">
+        <div class="dialog-head">
+          <div>
+            <p class="eyebrow">Account</p>
+            <h2>ログイン</h2>
+          </div>
+          <button class="icon-button" type="button" data-close="authDialog" aria-label="閉じる">×</button>
         </div>
-        <form id="topicForm" class="topic-form">
+        <p id="authHelp" class="help-text">
+          Supabase接続時はメールのマジックリンクでログインします。未設定時はデモ名でログインします。
+        </p>
+        <label>
+          表示名
+          <input name="displayName" maxlength="24" placeholder="例: yuki" />
+        </label>
+        <label>
+          メール
+          <input name="email" type="email" placeholder="you@example.com" />
+        </label>
+        <button class="button dark" type="submit">ログインする</button>
+      </form>
+    </dialog>
+
+    <dialog id="createDialog" class="dialog">
+      <form id="marketForm" class="dialog-body">
+        <div class="dialog-head">
+          <div>
+            <p class="eyebrow">New Market</p>
+            <h2>マーケット作成</h2>
+          </div>
+          <button class="icon-button" type="button" data-close="createDialog" aria-label="閉じる">×</button>
+        </div>
+        <label>
+          タイトル
+          <input name="title" required maxlength="90" placeholder="例: 次の国政選挙の投票率は55%を超える？" />
+        </label>
+        <div class="form-grid">
           <label>
-            テーマ名
-            <input name="title" required maxlength="64" placeholder="例: 次の国政選挙の投票率は？" />
-          </label>
-          <label>
-            カテゴリー
+            カテゴリ
             <select name="category">
               <option>選挙</option>
               <option>スポーツ</option>
               <option>経済</option>
+              <option>ニュース</option>
               <option>エンタメ</option>
               <option>その他</option>
             </select>
@@ -121,65 +122,69 @@
             締切
             <input name="deadline" type="date" required />
           </label>
-          <label class="wide">
-            選択肢
-            <input name="options" required placeholder="A候補, B候補, 50%以上, 50%未満" />
-          </label>
-          <label class="wide">
-            説明
-            <textarea
-              name="description"
-              rows="4"
-              maxlength="180"
-              placeholder="予想してほしい内容や判定条件を書いてください。"
-            ></textarea>
-          </label>
-          <button class="button primary wide" type="submit">テーマを公開</button>
-        </form>
-      </section>
-
-      <section id="activity" class="activity" aria-labelledby="activity-title">
-        <div class="section-head">
-          <div>
-            <p class="eyebrow">Activity</p>
-            <h2 id="activity-title">最近の予想</h2>
-          </div>
-          <button id="resetButton" class="button ghost" type="button">デモデータに戻す</button>
         </div>
-        <div id="activityList" class="activity-list" aria-live="polite"></div>
-      </section>
-    </main>
-
-    <dialog id="predictionDialog" class="dialog">
-      <form id="predictionForm" method="dialog">
-        <div class="dialog-head">
-          <div>
-            <p class="eyebrow">Prediction</p>
-            <h2 id="dialogTitle">予想する</h2>
-          </div>
-          <button class="icon-button" type="button" id="closeDialog" aria-label="閉じる">×</button>
-        </div>
-        <input type="hidden" name="topicId" />
         <label>
-          あなたの名前
-          <input name="name" required maxlength="24" placeholder="例: yuki" />
+          選択肢
+          <input name="options" required placeholder="Yes, No または A候補, B候補" />
         </label>
         <label>
-          予想
-          <select name="choice" required></select>
+          判定条件
+          <textarea name="description" rows="4" maxlength="220" placeholder="何をもって結果確定とするかを書いてください。"></textarea>
         </label>
-        <label>
-          確信度: <span id="confidenceValue">60%</span>
-          <input name="confidence" type="range" min="10" max="100" value="60" step="5" />
-        </label>
-        <label>
-          理由
-          <textarea name="reason" rows="4" maxlength="160" placeholder="根拠や見立てを短く書いてください。"></textarea>
-        </label>
-        <button class="button primary" type="submit">予想を投稿</button>
+        <button class="button dark" type="submit">公開する</button>
       </form>
     </dialog>
 
+    <dialog id="predictDialog" class="dialog">
+      <form id="predictionForm" class="dialog-body">
+        <div class="dialog-head">
+          <div>
+            <p class="eyebrow">Forecast</p>
+            <h2 id="predictionTitle">予想する</h2>
+          </div>
+          <button class="icon-button" type="button" data-close="predictDialog" aria-label="閉じる">×</button>
+        </div>
+        <input name="marketId" type="hidden" />
+        <label>
+          予想
+          <select name="optionId" required></select>
+        </label>
+        <label>
+          確信度 <span id="confidenceValue">65%</span>
+          <input name="confidence" type="range" min="10" max="100" value="65" step="5" />
+        </label>
+        <label>
+          根拠
+          <textarea name="reason" rows="4" maxlength="180" placeholder="根拠や見立てを短く書いてください。"></textarea>
+        </label>
+        <button class="button dark" type="submit">予想を投稿</button>
+      </form>
+    </dialog>
+
+    <dialog id="resolveDialog" class="dialog">
+      <form id="resolveForm" class="dialog-body">
+        <div class="dialog-head">
+          <div>
+            <p class="eyebrow">Resolve</p>
+            <h2>結果を確定</h2>
+          </div>
+          <button class="icon-button" type="button" data-close="resolveDialog" aria-label="閉じる">×</button>
+        </div>
+        <input name="marketId" type="hidden" />
+        <label>
+          正解
+          <select name="optionId" required></select>
+        </label>
+        <label>
+          確定メモ
+          <textarea name="note" rows="3" maxlength="180" placeholder="参照した公式発表など"></textarea>
+        </label>
+        <button class="button dark" type="submit">確定してランキングへ反映</button>
+      </form>
+    </dialog>
+
+    <script src="./supabase-config.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./script.js"></script>
   </body>
 </html>

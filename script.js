@@ -1,361 +1,769 @@
-const STORAGE_KEY = "minna-yosou-v1";
+const STORAGE_KEY = "yosou-markets-demo-v2";
+const config = window.YOSOUBOX_CONFIG || {};
+const hasSupabaseConfig = Boolean(config.supabaseUrl && config.supabaseAnonKey && window.supabase);
+const db = hasSupabaseConfig ? window.supabase.createClient(config.supabaseUrl, config.supabaseAnonKey) : null;
 
-const seedTopics = [
-  {
-    id: "mayor-2026",
-    title: "架空市長選 2026 の当選者は？",
-    category: "選挙",
-    deadline: "2026-09-20",
-    description: "公開討論会、支持率、投票率の変化を見ながら当選者を予想します。",
-    options: ["現職候補", "新人候補", "無所属候補"],
-    predictions: [
-      { name: "akari", choice: "現職候補", confidence: 70, reason: "組織票がまだ強いと思う。" },
-      { name: "sota", choice: "新人候補", confidence: 55, reason: "若年層の投票率が上がりそう。" },
-      { name: "mika", choice: "現職候補", confidence: 65, reason: "現時点の争点では守りが有利。" },
-      { name: "ren", choice: "無所属候補", confidence: 35, reason: "終盤の一本化があれば可能性あり。" },
-    ],
-  },
-  {
-    id: "turnout-national",
-    title: "次の国政選挙の投票率は 55% を超える？",
-    category: "選挙",
-    deadline: "2026-10-01",
-    description: "争点の強さ、天候、期日前投票の伸びから投票率を予想します。",
-    options: ["55%を超える", "55%以下", "判断保留"],
-    predictions: [
-      { name: "kei", choice: "55%を超える", confidence: 60, reason: "物価関連の関心が高い。" },
-      { name: "nana", choice: "55%以下", confidence: 58, reason: "無党派層の熱量が読みにくい。" },
-    ],
-  },
-  {
-    id: "league-final",
-    title: "今年の決勝戦で優勝するチームは？",
-    category: "スポーツ",
-    deadline: "2026-07-12",
-    description: "直近の調子、故障者、相性をもとに優勝チームを予想します。",
-    options: ["東クラブ", "西クラブ", "北クラブ", "南クラブ"],
-    predictions: [
-      { name: "taku", choice: "東クラブ", confidence: 80, reason: "守備の安定感が抜けている。" },
-      { name: "emi", choice: "西クラブ", confidence: 50, reason: "短期決戦に強い選手が多い。" },
-      { name: "jun", choice: "東クラブ", confidence: 68, reason: "控え選手の層が厚い。" },
-    ],
-  },
-  {
-    id: "yen-range",
-    title: "年末の為替レートはどの範囲？",
-    category: "経済",
-    deadline: "2026-12-20",
-    description: "金利、景気指標、リスクイベントを見ながらレンジを予想します。",
-    options: ["140円未満", "140円台", "150円台", "160円以上"],
-    predictions: [
-      { name: "hiro", choice: "150円台", confidence: 45, reason: "金利差が急には縮まらない。" },
-      { name: "mai", choice: "140円台", confidence: 52, reason: "政策変更の余地がある。" },
-    ],
-  },
-  {
-    id: "award-winner",
-    title: "今年の話題賞を取る作品ジャンルは？",
-    category: "エンタメ",
-    deadline: "2026-11-30",
-    description: "配信の反応、口コミ、公開規模から受賞ジャンルを予想します。",
-    options: ["映画", "アニメ", "ゲーム", "音楽"],
-    predictions: [
-      { name: "rio", choice: "アニメ", confidence: 66, reason: "海外反応が強い。" },
-      { name: "yui", choice: "ゲーム", confidence: 48, reason: "大型タイトルの発売が続く。" },
-    ],
-  },
-];
+const seedData = {
+  markets: [
+    {
+      id: "m-election",
+      title: "次の国政選挙の投票率は55%を超える？",
+      category: "選挙",
+      description: "争点、天候、期日前投票の伸びを見ながら投票率を予想するマーケット。",
+      deadline: "2026-10-01",
+      status: "open",
+      created_at: "2026-05-20T10:00:00Z",
+    },
+    {
+      id: "m-mayor",
+      title: "架空市長選 2026 の当選者は？",
+      category: "選挙",
+      description: "公開討論会後の支持率と地元組織の動きが焦点。",
+      deadline: "2026-09-20",
+      status: "open",
+      created_at: "2026-05-19T10:00:00Z",
+    },
+    {
+      id: "m-cup",
+      title: "今年の決勝戦で優勝するチームは？",
+      category: "スポーツ",
+      description: "直近の故障者、守備指標、対戦相性をもとに予想。",
+      deadline: "2026-07-12",
+      status: "open",
+      created_at: "2026-05-18T10:00:00Z",
+    },
+    {
+      id: "m-yen",
+      title: "年末の為替レートは150円台で終わる？",
+      category: "経済",
+      description: "金利差、物価指標、政策変更のタイミングを見ます。",
+      deadline: "2026-12-20",
+      status: "open",
+      created_at: "2026-05-17T10:00:00Z",
+    },
+    {
+      id: "m-award",
+      title: "今年の話題賞を取る作品ジャンルは？",
+      category: "エンタメ",
+      description: "配信の反応、SNS波及、公開規模から予想。",
+      deadline: "2026-11-30",
+      status: "resolved",
+      created_at: "2026-05-16T10:00:00Z",
+    },
+  ],
+  options: [
+    { id: "o-election-yes", market_id: "m-election", label: "55%を超える", sort_order: 0 },
+    { id: "o-election-no", market_id: "m-election", label: "55%以下", sort_order: 1 },
+    { id: "o-mayor-a", market_id: "m-mayor", label: "現職候補", sort_order: 0 },
+    { id: "o-mayor-b", market_id: "m-mayor", label: "新人候補", sort_order: 1 },
+    { id: "o-mayor-c", market_id: "m-mayor", label: "無所属候補", sort_order: 2 },
+    { id: "o-cup-east", market_id: "m-cup", label: "東クラブ", sort_order: 0 },
+    { id: "o-cup-west", market_id: "m-cup", label: "西クラブ", sort_order: 1 },
+    { id: "o-cup-north", market_id: "m-cup", label: "北クラブ", sort_order: 2 },
+    { id: "o-yen-yes", market_id: "m-yen", label: "150円台", sort_order: 0 },
+    { id: "o-yen-no", market_id: "m-yen", label: "それ以外", sort_order: 1 },
+    { id: "o-award-anime", market_id: "m-award", label: "アニメ", sort_order: 0 },
+    { id: "o-award-game", market_id: "m-award", label: "ゲーム", sort_order: 1 },
+    { id: "o-award-movie", market_id: "m-award", label: "映画", sort_order: 2 },
+  ],
+  predictions: [
+    { id: "p1", market_id: "m-election", option_id: "o-election-yes", user_name: "akari", confidence: 62, reason: "物価と社会保障が争点化して関心が高い。", created_at: "2026-05-20T11:00:00Z" },
+    { id: "p2", market_id: "m-election", option_id: "o-election-no", user_name: "ren", confidence: 55, reason: "無党派層の熱量がまだ弱い。", created_at: "2026-05-20T12:00:00Z" },
+    { id: "p3", market_id: "m-mayor", option_id: "o-mayor-a", user_name: "mika", confidence: 70, reason: "現職の地盤が崩れていない。", created_at: "2026-05-20T13:00:00Z" },
+    { id: "p4", market_id: "m-mayor", option_id: "o-mayor-b", user_name: "sota", confidence: 58, reason: "討論会後に新人の認知が伸びた。", created_at: "2026-05-20T14:00:00Z" },
+    { id: "p5", market_id: "m-cup", option_id: "o-cup-east", user_name: "taku", confidence: 80, reason: "守備の安定感が抜けている。", created_at: "2026-05-20T15:00:00Z" },
+    { id: "p6", market_id: "m-yen", option_id: "o-yen-yes", user_name: "hiro", confidence: 48, reason: "金利差が急には縮まらない。", created_at: "2026-05-20T16:00:00Z" },
+    { id: "p7", market_id: "m-award", option_id: "o-award-anime", user_name: "rio", confidence: 72, reason: "海外での拡散が大きい。", created_at: "2026-05-20T17:00:00Z" },
+    { id: "p8", market_id: "m-award", option_id: "o-award-game", user_name: "yui", confidence: 45, reason: "大型タイトルの発売が続く。", created_at: "2026-05-20T18:00:00Z" },
+  ],
+  comments: [
+    { id: "c1", market_id: "m-election", user_name: "kei", body: "期日前投票の数字が出たらかなり動きそう。", created_at: "2026-05-20T19:00:00Z" },
+    { id: "c2", market_id: "m-mayor", user_name: "nana", body: "争点が交通政策に寄るなら新人候補もある。", created_at: "2026-05-20T20:00:00Z" },
+    { id: "c3", market_id: "m-award", user_name: "rio", body: "公式発表後にアニメで確定。", created_at: "2026-05-20T21:00:00Z" },
+  ],
+  results: [
+    { market_id: "m-award", winning_option_id: "o-award-anime", note: "デモ用の確定結果", resolved_at: "2026-05-20T22:00:00Z" },
+  ],
+};
 
-let topics = loadTopics();
-let activeFilter = "all";
+const state = {
+  markets: [],
+  options: [],
+  predictions: [],
+  comments: [],
+  results: [],
+  category: "all",
+  query: "",
+  selectedMarketId: null,
+  user: null,
+  profile: null,
+  mode: hasSupabaseConfig ? "supabase" : "demo",
+};
 
-const topicGrid = document.querySelector("#topicGrid");
-const activityList = document.querySelector("#activityList");
-const predictionDialog = document.querySelector("#predictionDialog");
-const predictionForm = document.querySelector("#predictionForm");
-const topicForm = document.querySelector("#topicForm");
-const confidenceInput = predictionForm.elements.confidence;
-const confidenceValue = document.querySelector("#confidenceValue");
+const els = {
+  marketList: document.querySelector("#marketList"),
+  marketDetail: document.querySelector("#marketDetail"),
+  leaderboardList: document.querySelector("#leaderboardList"),
+  searchInput: document.querySelector("#searchInput"),
+  connectionBadge: document.querySelector("#connectionBadge"),
+  loginButton: document.querySelector("#loginButton"),
+  authDialog: document.querySelector("#authDialog"),
+  authForm: document.querySelector("#authForm"),
+  createDialog: document.querySelector("#createDialog"),
+  marketForm: document.querySelector("#marketForm"),
+  predictDialog: document.querySelector("#predictDialog"),
+  predictionForm: document.querySelector("#predictionForm"),
+  resolveDialog: document.querySelector("#resolveDialog"),
+  resolveForm: document.querySelector("#resolveForm"),
+  confidenceValue: document.querySelector("#confidenceValue"),
+};
 
-function loadTopics() {
-  const saved = localStorage.getItem(STORAGE_KEY);
-  if (!saved) return structuredClone(seedTopics);
+init();
 
-  try {
-    const parsed = JSON.parse(saved);
-    return Array.isArray(parsed) ? parsed : structuredClone(seedTopics);
-  } catch {
-    return structuredClone(seedTopics);
-  }
+async function init() {
+  bindEvents();
+  await loadSession();
+  await loadData();
+  render();
 }
 
-function saveTopics() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(topics));
-}
-
-function formatDate(value) {
-  const date = new Date(`${value}T00:00:00`);
-  return new Intl.DateTimeFormat("ja-JP", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  }).format(date);
-}
-
-function isClosed(topic) {
-  const today = new Date();
-  const deadline = new Date(`${topic.deadline}T23:59:59`);
-  return deadline < today;
-}
-
-function summarize(topic) {
-  const total = topic.predictions.length;
-  const counts = Object.fromEntries(topic.options.map((option) => [option, 0]));
-  topic.predictions.forEach((prediction) => {
-    counts[prediction.choice] = (counts[prediction.choice] || 0) + 1;
+function bindEvents() {
+  document.querySelector("#createMarketButton").addEventListener("click", () => {
+    if (!requireLogin()) return;
+    els.createDialog.showModal();
   });
 
-  return topic.options.map((option) => ({
-    option,
-    count: counts[option] || 0,
-    pct: total ? Math.round(((counts[option] || 0) / total) * 100) : 0,
-  }));
+  els.loginButton.addEventListener("click", async () => {
+    if (state.user || state.profile) {
+      await signOut();
+      return;
+    }
+    els.authDialog.showModal();
+  });
+
+  document.querySelectorAll("[data-close]").forEach((button) => {
+    button.addEventListener("click", () => document.querySelector(`#${button.dataset.close}`).close());
+  });
+
+  document.querySelectorAll(".topic-tab").forEach((button) => {
+    button.addEventListener("click", () => {
+      document.querySelectorAll(".topic-tab").forEach((item) => item.classList.remove("active"));
+      button.classList.add("active");
+      state.category = button.dataset.category;
+      render();
+    });
+  });
+
+  els.searchInput.addEventListener("input", () => {
+    state.query = els.searchInput.value.trim().toLowerCase();
+    renderMarkets();
+  });
+
+  els.authForm.addEventListener("submit", handleAuth);
+  els.marketForm.addEventListener("submit", handleMarketCreate);
+  els.predictionForm.addEventListener("submit", handlePredictionCreate);
+  els.resolveForm.addEventListener("submit", handleResolve);
+
+  els.predictionForm.elements.confidence.addEventListener("input", () => {
+    els.confidenceValue.textContent = `${els.predictionForm.elements.confidence.value}%`;
+  });
 }
 
-function renderTopics() {
-  const filtered =
-    activeFilter === "all"
-      ? topics
-      : topics.filter((topic) => topic.category === activeFilter);
+async function loadSession() {
+  if (!db) {
+    const localProfile = JSON.parse(localStorage.getItem("yosou-demo-profile") || "null");
+    state.profile = localProfile;
+    return;
+  }
 
-  topicGrid.innerHTML = filtered
-    .map((topic) => {
-      const rows = summarize(topic)
-        .map(
-          (item) => `
-            <div class="result-row">
-              <div class="result-label">
-                <span>${escapeHtml(item.option)}</span>
-                <span>${item.pct}%</span>
-              </div>
-              <div class="meter"><span style="--pct: ${item.pct}%"></span></div>
-            </div>
-          `,
-        )
-        .join("");
+  const { data } = await db.auth.getSession();
+  state.user = data.session?.user || null;
+  if (!state.user) return;
 
-      const closed = isClosed(topic);
+  const { data: profile } = await db.from("profiles").select("*").eq("id", state.user.id).maybeSingle();
+  if (profile) {
+    state.profile = profile;
+    return;
+  }
+
+  const displayName =
+    state.user.user_metadata?.display_name ||
+    state.user.email?.split("@")[0] ||
+    "user";
+  const { data: createdProfile } = await db
+    .from("profiles")
+    .insert({ id: state.user.id, display_name: displayName })
+    .select("*")
+    .single();
+  state.profile = createdProfile || { id: state.user.id, display_name: displayName };
+}
+
+async function loadData() {
+  if (!db) {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+    Object.assign(state, saved || structuredClone(seedData));
+    state.selectedMarketId ||= state.markets[0]?.id || null;
+    return;
+  }
+
+  const [markets, options, predictions, comments, results] = await Promise.all([
+    db.from("markets").select("*").order("created_at", { ascending: false }),
+    db.from("market_options").select("*").order("sort_order", { ascending: true }),
+    db.from("predictions").select("*").order("created_at", { ascending: true }),
+    db.from("comments").select("*").order("created_at", { ascending: true }),
+    db.from("market_results").select("*"),
+  ]);
+
+  const failed = [markets, options, predictions, comments, results].find((response) => response.error);
+  if (failed) {
+    console.error(failed.error);
+    alert("Supabaseからデータを読み込めませんでした。schema SQLとRLS設定を確認してください。");
+    Object.assign(state, structuredClone(seedData));
+    state.mode = "demo";
+    return;
+  }
+
+  state.markets = markets.data;
+  state.options = options.data;
+  state.predictions = predictions.data;
+  state.comments = comments.data;
+  state.results = results.data;
+  state.selectedMarketId ||= state.markets[0]?.id || null;
+}
+
+function saveDemoData() {
+  if (db) return;
+  const payload = {
+    markets: state.markets,
+    options: state.options,
+    predictions: state.predictions,
+    comments: state.comments,
+    results: state.results,
+  };
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+}
+
+function render() {
+  els.connectionBadge.textContent = state.mode === "supabase" ? "Shared DB" : "Demo DB";
+  els.connectionBadge.classList.toggle("muted", state.mode !== "supabase");
+  els.loginButton.textContent = state.profile ? `${state.profile.display_name} / ログアウト` : "ログイン";
+  renderStats();
+  renderMarkets();
+  renderDetail();
+  renderLeaderboard();
+}
+
+function renderStats() {
+  document.querySelector("#statMarkets").textContent = state.markets.length;
+  document.querySelector("#statPredictions").textContent = state.predictions.length;
+  document.querySelector("#statResolved").textContent = state.results.length;
+}
+
+function getVisibleMarkets() {
+  return state.markets.filter((market) => {
+    const categoryMatch = state.category === "all" || market.category === state.category;
+    const text = `${market.title} ${market.description || ""} ${market.category}`.toLowerCase();
+    return categoryMatch && (!state.query || text.includes(state.query));
+  });
+}
+
+function renderMarkets() {
+  const visible = getVisibleMarkets();
+  if (!visible.length) {
+    els.marketList.innerHTML = `<div class="empty">該当するマーケットはありません。</div>`;
+    return;
+  }
+
+  els.marketList.innerHTML = visible
+    .map((market) => {
+      const options = getOptions(market.id);
+      const statusTag = getStatusTag(market);
       return `
-        <article class="topic-card">
-          <div class="topic-meta">
-            <span class="pill ${topic.category === "選挙" ? "election" : ""}">${escapeHtml(topic.category)}</span>
-            <span class="pill ${closed ? "closed" : ""}">${closed ? "締切済み" : `${formatDate(topic.deadline)} 締切`}</span>
+        <article class="market-card" data-market="${market.id}">
+          <div>
+            <div class="market-meta">
+              <span class="tag">${escapeHtml(market.category)}</span>
+              ${statusTag}
+              <span class="tag">${getPredictionCount(market.id)} forecasts</span>
+            </div>
+            <h2 class="market-title">${escapeHtml(market.title)}</h2>
+            <p class="market-desc">${escapeHtml(market.description || "説明はありません。")}</p>
           </div>
-          <h3>${escapeHtml(topic.title)}</h3>
-          <p>${escapeHtml(topic.description || "説明はまだありません。")}</p>
-          <div class="result-list">${rows}</div>
-          <div class="topic-footer">
-            <small>${topic.predictions.length}件の予想</small>
-            <button class="button primary" type="button" data-predict="${topic.id}" ${closed ? "disabled" : ""}>予想する</button>
+          <div class="price-stack">
+            ${options
+              .slice(0, 3)
+              .map((option) => {
+                const pct = getOptionPct(market.id, option.id);
+                return `
+                  <button class="price-row" type="button" style="--pct: ${pct}%;" data-predict="${market.id}" data-option="${option.id}">
+                    <span>${escapeHtml(option.label)}</span>
+                    <b>${pct}%</b>
+                  </button>
+                `;
+              })
+              .join("")}
           </div>
         </article>
       `;
     })
     .join("");
 
-  topicGrid.querySelectorAll("[data-predict]").forEach((button) => {
-    button.addEventListener("click", () => openPrediction(button.dataset.predict));
+  els.marketList.querySelectorAll("[data-market]").forEach((card) => {
+    card.addEventListener("click", (event) => {
+      if (event.target.closest("[data-predict]")) return;
+      state.selectedMarketId = card.dataset.market;
+      renderDetail();
+    });
+  });
+
+  els.marketList.querySelectorAll("[data-predict]").forEach((button) => {
+    button.addEventListener("click", () => openPredict(button.dataset.predict, button.dataset.option));
   });
 }
 
-function renderStats() {
-  const predictions = topics.flatMap((topic) => topic.predictions);
-  const average = predictions.length
-    ? Math.round(predictions.reduce((sum, item) => sum + Number(item.confidence), 0) / predictions.length)
-    : 0;
-
-  document.querySelector("#statTopics").textContent = topics.length;
-  document.querySelector("#statPredictions").textContent = predictions.length;
-  document.querySelector("#statAverage").textContent = `${average}%`;
-}
-
-function renderActivity() {
-  const entries = topics
-    .flatMap((topic) =>
-      topic.predictions.map((prediction) => ({
-        ...prediction,
-        topicTitle: topic.title,
-        topicId: topic.id,
-      })),
-    )
-    .slice(-8)
-    .reverse();
-
-  activityList.innerHTML = entries.length
-    ? entries
-        .map(
-          (entry) => `
-            <article class="activity-item">
-              <div>
-                <h3>${escapeHtml(entry.name)} さんが「${escapeHtml(entry.choice)}」と予想</h3>
-                <p>${escapeHtml(entry.topicTitle)} / ${escapeHtml(entry.reason || "理由は未記入です。")}</p>
-              </div>
-              <span class="confidence">${Number(entry.confidence)}%</span>
-            </article>
-          `,
-        )
-        .join("")
-    : `<article class="activity-item"><p>まだ予想はありません。</p></article>`;
-}
-
-function renderAll() {
-  renderStats();
-  renderTopics();
-  renderActivity();
-  drawTrend();
-}
-
-function openPrediction(topicId) {
-  const topic = topics.find((item) => item.id === topicId);
-  if (!topic) return;
-
-  predictionForm.elements.topicId.value = topic.id;
-  document.querySelector("#dialogTitle").textContent = topic.title;
-  predictionForm.elements.choice.innerHTML = topic.options
-    .map((option) => `<option>${escapeHtml(option)}</option>`)
-    .join("");
-  confidenceInput.value = 60;
-  confidenceValue.textContent = "60%";
-  predictionDialog.showModal();
-}
-
-predictionForm.addEventListener("submit", (event) => {
-  event.preventDefault();
-  const formData = new FormData(predictionForm);
-  const topic = topics.find((item) => item.id === formData.get("topicId"));
-  if (!topic) return;
-
-  topic.predictions.push({
-    name: String(formData.get("name")).trim(),
-    choice: String(formData.get("choice")),
-    confidence: Number(formData.get("confidence")),
-    reason: String(formData.get("reason")).trim(),
-  });
-
-  saveTopics();
-  predictionDialog.close();
-  predictionForm.reset();
-  renderAll();
-});
-
-topicForm.addEventListener("submit", (event) => {
-  event.preventDefault();
-  const formData = new FormData(topicForm);
-  const options = String(formData.get("options"))
-    .split(",")
-    .map((option) => option.trim())
-    .filter(Boolean)
-    .slice(0, 6);
-
-  if (options.length < 2) {
-    topicForm.elements.options.setCustomValidity("選択肢を2つ以上入力してください。");
-    topicForm.elements.options.reportValidity();
+function renderDetail() {
+  const market = getSelectedMarket();
+  if (!market) {
+    els.marketDetail.innerHTML = `<div class="detail-main"><p>マーケットを選択してください。</p></div>`;
     return;
   }
 
-  topicForm.elements.options.setCustomValidity("");
-  topics.unshift({
-    id: `topic-${Date.now()}`,
-    title: String(formData.get("title")).trim(),
-    category: String(formData.get("category")),
-    deadline: String(formData.get("deadline")),
-    description: String(formData.get("description")).trim(),
-    options,
-    predictions: [],
+  const options = getOptions(market.id);
+  const result = getResult(market.id);
+  const resolved = market.status === "resolved" || Boolean(result);
+  const closed = isMarketClosed(market);
+  els.marketDetail.innerHTML = `
+    <div class="detail-main">
+      <div class="market-meta">
+        <span class="tag">${escapeHtml(market.category)}</span>
+        ${getStatusTag(market)}
+        <span class="tag">Ends ${formatDate(market.deadline)}</span>
+      </div>
+      <h2>${escapeHtml(market.title)}</h2>
+      <p>${escapeHtml(market.description || "説明はありません。")}</p>
+      <div class="price-stack">
+        ${options
+          .map((option) => {
+            const pct = getOptionPct(market.id, option.id);
+            const winner = result?.winning_option_id === option.id ? " 正解" : "";
+            return `
+              <button class="price-row" type="button" style="--pct: ${pct}%;" data-detail-predict="${option.id}">
+                <span>${escapeHtml(option.label)}${winner}</span>
+                <b>${pct}%</b>
+              </button>
+            `;
+          })
+          .join("")}
+      </div>
+      <div class="action-grid">
+        <button class="button green" type="button" data-open-predict="${market.id}" ${closed || resolved ? "disabled" : ""}>予想する</button>
+        <button class="button ghost" type="button" data-open-resolve="${market.id}" ${resolved ? "disabled" : ""}>結果確定</button>
+      </div>
+      ${result ? `<p class="help-text">確定: ${escapeHtml(getOptionLabel(result.winning_option_id))} / ${escapeHtml(result.note || "メモなし")}</p>` : ""}
+    </div>
+    <div class="comments">
+      <div class="card-head">
+        <h2>コメント</h2>
+        <span>${getComments(market.id).length}</span>
+      </div>
+      <div class="comment-list">
+        ${renderComments(market.id)}
+      </div>
+      <form class="comment-form" data-comment-form="${market.id}">
+        <textarea name="body" rows="3" maxlength="220" placeholder="このマーケットについてコメント"></textarea>
+        <button class="button dark" type="submit">投稿</button>
+      </form>
+    </div>
+  `;
+
+  els.marketDetail.querySelectorAll("[data-detail-predict]").forEach((button) => {
+    button.addEventListener("click", () => openPredict(market.id, button.dataset.detailPredict));
   });
+  els.marketDetail.querySelector("[data-open-predict]")?.addEventListener("click", () => openPredict(market.id));
+  els.marketDetail.querySelector("[data-open-resolve]")?.addEventListener("click", () => openResolve(market.id));
+  els.marketDetail.querySelector("[data-comment-form]")?.addEventListener("submit", handleCommentCreate);
+}
 
-  saveTopics();
-  topicForm.reset();
-  renderAll();
-  document.querySelector("#topics").scrollIntoView({ behavior: "smooth" });
-});
+function renderComments(marketId) {
+  const comments = getComments(marketId).slice(-12).reverse();
+  if (!comments.length) return `<div class="empty">まだコメントはありません。</div>`;
 
-topicForm.elements.options.addEventListener("input", () => {
-  topicForm.elements.options.setCustomValidity("");
-});
+  return comments
+    .map(
+      (comment) => `
+        <article class="comment">
+          <div class="comment-meta">
+            <strong>${escapeHtml(comment.user_name)}</strong>
+            <span>${formatDateTime(comment.created_at)}</span>
+          </div>
+          <p>${escapeHtml(comment.body)}</p>
+        </article>
+      `,
+    )
+    .join("");
+}
 
-document.querySelectorAll(".filter").forEach((button) => {
-  button.addEventListener("click", () => {
-    document.querySelectorAll(".filter").forEach((item) => item.classList.remove("active"));
-    button.classList.add("active");
-    activeFilter = button.dataset.filter;
-    renderTopics();
-  });
-});
-
-document.querySelector("#closeDialog").addEventListener("click", () => predictionDialog.close());
-
-document.querySelector("#resetButton").addEventListener("click", () => {
-  topics = structuredClone(seedTopics);
-  saveTopics();
-  activeFilter = "all";
-  document.querySelectorAll(".filter").forEach((item) => {
-    item.classList.toggle("active", item.dataset.filter === "all");
-  });
-  renderAll();
-});
-
-confidenceInput.addEventListener("input", () => {
-  confidenceValue.textContent = `${confidenceInput.value}%`;
-});
-
-function drawTrend() {
-  const canvas = document.querySelector("#trendCanvas");
-  const ctx = canvas.getContext("2d");
-  const width = canvas.width;
-  const height = canvas.height;
-
-  ctx.clearRect(0, 0, width, height);
-  ctx.fillStyle = "#fbfcff";
-  ctx.fillRect(0, 0, width, height);
-
-  ctx.strokeStyle = "#d8dde6";
-  ctx.lineWidth = 1;
-  for (let y = 44; y < height; y += 44) {
-    ctx.beginPath();
-    ctx.moveTo(0, y);
-    ctx.lineTo(width, y);
-    ctx.stroke();
+function renderLeaderboard() {
+  const rows = buildLeaderboard();
+  if (!rows.length) {
+    els.leaderboardList.innerHTML = `<div class="empty">確定済みマーケットの的中者がまだいません。</div>`;
+    return;
   }
 
-  const lines = [
-    { color: "#2154d8", values: [30, 34, 33, 39, 42, 46] },
-    { color: "#168765", values: [38, 37, 40, 36, 35, 34] },
-    { color: "#c47b18", values: [32, 29, 27, 25, 23, 20] },
-  ];
+  els.leaderboardList.innerHTML = rows
+    .map(
+      (row, index) => `
+        <div class="leaderboard-row">
+          <strong>${index + 1}. ${escapeHtml(row.name)}</strong>
+          <span>${row.rate}% (${row.correct}/${row.total})</span>
+        </div>
+      `,
+    )
+    .join("");
+}
 
-  lines.forEach((line) => {
-    ctx.strokeStyle = line.color;
-    ctx.lineWidth = 5;
-    ctx.lineJoin = "round";
-    ctx.lineCap = "round";
-    ctx.beginPath();
-    line.values.forEach((value, index) => {
-      const x = 32 + index * ((width - 64) / (line.values.length - 1));
-      const y = height - 28 - (value / 60) * (height - 58);
-      if (index === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    });
-    ctx.stroke();
+async function handleAuth(event) {
+  event.preventDefault();
+  const formData = new FormData(els.authForm);
+  const displayName = String(formData.get("displayName") || "").trim() || "guest";
+  const email = String(formData.get("email") || "").trim();
+
+  if (!db) {
+    state.profile = { id: `demo-${Date.now()}`, display_name: displayName };
+    localStorage.setItem("yosou-demo-profile", JSON.stringify(state.profile));
+    els.authDialog.close();
+    render();
+    return;
+  }
+
+  if (!email) {
+    els.authForm.elements.email.setCustomValidity("メールアドレスを入力してください。");
+    els.authForm.elements.email.reportValidity();
+    return;
+  }
+
+  const { error } = await db.auth.signInWithOtp({
+    email,
+    options: {
+      emailRedirectTo: window.location.href,
+      data: { display_name: displayName },
+    },
   });
 
-  ctx.fillStyle = "#5f6570";
-  ctx.font = "700 20px system-ui, sans-serif";
-  ctx.fillText("予想推移", 24, 34);
+  if (error) {
+    alert(error.message);
+    return;
+  }
+
+  alert("ログイン用リンクをメールで送信しました。");
+  els.authDialog.close();
+}
+
+async function signOut() {
+  if (db) await db.auth.signOut();
+  localStorage.removeItem("yosou-demo-profile");
+  state.user = null;
+  state.profile = null;
+  render();
+}
+
+async function handleMarketCreate(event) {
+  event.preventDefault();
+  if (!requireLogin()) return;
+
+  const formData = new FormData(els.marketForm);
+  const options = String(formData.get("options"))
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .slice(0, 8);
+
+  if (options.length < 2) {
+    els.marketForm.elements.options.setCustomValidity("選択肢を2つ以上入力してください。");
+    els.marketForm.elements.options.reportValidity();
+    return;
+  }
+  els.marketForm.elements.options.setCustomValidity("");
+
+  const market = {
+    id: crypto.randomUUID(),
+    title: String(formData.get("title")).trim(),
+    category: String(formData.get("category")),
+    description: String(formData.get("description")).trim(),
+    deadline: String(formData.get("deadline")),
+    status: "open",
+    created_by: state.user?.id || null,
+    created_at: new Date().toISOString(),
+  };
+  const optionRows = options.map((label, index) => ({
+    id: crypto.randomUUID(),
+    market_id: market.id,
+    label,
+    sort_order: index,
+  }));
+
+  if (db) {
+    const { data: createdMarket, error: marketError } = await db
+      .from("markets")
+      .insert({
+        title: market.title,
+        category: market.category,
+        description: market.description,
+        deadline: market.deadline,
+        status: "open",
+        created_by: state.user.id,
+      })
+      .select("id")
+      .single();
+    if (marketError) return alert(marketError.message);
+
+    const remoteOptions = optionRows.map((option) => ({
+      market_id: createdMarket.id,
+      label: option.label,
+      sort_order: option.sort_order,
+    }));
+    const { error: optionError } = await db.from("market_options").insert(remoteOptions);
+    if (optionError) return alert(optionError.message);
+    await loadData();
+    state.selectedMarketId = createdMarket.id;
+  } else {
+    state.markets.unshift(market);
+    state.options.push(...optionRows);
+    saveDemoData();
+    state.selectedMarketId = market.id;
+  }
+
+  els.marketForm.reset();
+  els.createDialog.close();
+  render();
+}
+
+async function handlePredictionCreate(event) {
+  event.preventDefault();
+  if (!requireLogin()) return;
+
+  const formData = new FormData(els.predictionForm);
+  const prediction = {
+    id: crypto.randomUUID(),
+    market_id: String(formData.get("marketId")),
+    option_id: String(formData.get("optionId")),
+    user_id: state.user?.id || null,
+    user_name: currentName(),
+    confidence: Number(formData.get("confidence")),
+    reason: String(formData.get("reason")).trim(),
+    created_at: new Date().toISOString(),
+  };
+
+  if (db) {
+    const { error } = await db.from("predictions").insert({
+      market_id: prediction.market_id,
+      option_id: prediction.option_id,
+      user_id: state.user.id,
+      user_name: prediction.user_name,
+      confidence: prediction.confidence,
+      reason: prediction.reason,
+    });
+    if (error) return alert(error.message);
+    await loadData();
+  } else {
+    state.predictions.push(prediction);
+    saveDemoData();
+  }
+
+  els.predictDialog.close();
+  els.predictionForm.reset();
+  render();
+}
+
+async function handleCommentCreate(event) {
+  event.preventDefault();
+  if (!requireLogin()) return;
+  const form = event.currentTarget;
+  const body = form.elements.body.value.trim();
+  if (!body) return;
+
+  const comment = {
+    id: crypto.randomUUID(),
+    market_id: form.dataset.commentForm,
+    user_id: state.user?.id || null,
+    user_name: currentName(),
+    body,
+    created_at: new Date().toISOString(),
+  };
+
+  if (db) {
+    const { error } = await db.from("comments").insert({
+      market_id: comment.market_id,
+      user_id: state.user.id,
+      user_name: comment.user_name,
+      body: comment.body,
+    });
+    if (error) return alert(error.message);
+    await loadData();
+  } else {
+    state.comments.push(comment);
+    saveDemoData();
+  }
+
+  render();
+}
+
+async function handleResolve(event) {
+  event.preventDefault();
+  if (!requireLogin()) return;
+
+  const formData = new FormData(els.resolveForm);
+  const result = {
+    market_id: String(formData.get("marketId")),
+    winning_option_id: String(formData.get("optionId")),
+    resolved_by: state.user?.id || null,
+    note: String(formData.get("note")).trim(),
+    resolved_at: new Date().toISOString(),
+  };
+
+  if (db) {
+    const { error } = await db.from("market_results").insert(result);
+    if (error) return alert(error.message);
+    await loadData();
+  } else {
+    state.results = state.results.filter((item) => item.market_id !== result.market_id);
+    state.results.push(result);
+    state.markets = state.markets.map((market) =>
+      market.id === result.market_id ? { ...market, status: "resolved" } : market,
+    );
+    saveDemoData();
+  }
+
+  els.resolveDialog.close();
+  render();
+}
+
+function openPredict(marketId, optionId = null) {
+  if (!requireLogin()) return;
+  const market = getMarket(marketId);
+  if (!market || market.status === "resolved" || isMarketClosed(market)) return;
+
+  els.predictionForm.elements.marketId.value = market.id;
+  document.querySelector("#predictionTitle").textContent = market.title;
+  els.predictionForm.elements.optionId.innerHTML = getOptions(market.id)
+    .map((option) => `<option value="${option.id}">${escapeHtml(option.label)}</option>`)
+    .join("");
+  if (optionId) els.predictionForm.elements.optionId.value = optionId;
+  els.predictionForm.elements.confidence.value = 65;
+  els.confidenceValue.textContent = "65%";
+  els.predictDialog.showModal();
+}
+
+function openResolve(marketId) {
+  if (!requireLogin()) return;
+  const market = getMarket(marketId);
+  if (!market) return;
+
+  els.resolveForm.elements.marketId.value = market.id;
+  els.resolveForm.elements.optionId.innerHTML = getOptions(market.id)
+    .map((option) => `<option value="${option.id}">${escapeHtml(option.label)}</option>`)
+    .join("");
+  els.resolveDialog.showModal();
+}
+
+function requireLogin() {
+  if (state.user || state.profile) return true;
+  els.authDialog.showModal();
+  return false;
+}
+
+function currentName() {
+  return state.profile?.display_name || state.user?.email || "guest";
+}
+
+function getSelectedMarket() {
+  return getMarket(state.selectedMarketId) || getVisibleMarkets()[0] || state.markets[0] || null;
+}
+
+function getMarket(id) {
+  return state.markets.find((market) => market.id === id);
+}
+
+function getOptions(marketId) {
+  return state.options
+    .filter((option) => option.market_id === marketId)
+    .sort((a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0));
+}
+
+function getPredictionCount(marketId) {
+  return state.predictions.filter((prediction) => prediction.market_id === marketId).length;
+}
+
+function getOptionPct(marketId, optionId) {
+  const predictions = state.predictions.filter((prediction) => prediction.market_id === marketId);
+  if (!predictions.length) return 0;
+  const count = predictions.filter((prediction) => prediction.option_id === optionId).length;
+  return Math.round((count / predictions.length) * 100);
+}
+
+function getComments(marketId) {
+  return state.comments.filter((comment) => comment.market_id === marketId);
+}
+
+function getResult(marketId) {
+  return state.results.find((result) => result.market_id === marketId);
+}
+
+function getOptionLabel(optionId) {
+  return state.options.find((option) => option.id === optionId)?.label || "不明";
+}
+
+function getStatusTag(market) {
+  if (market.status === "resolved" || getResult(market.id)) {
+    return `<span class="tag resolved">Resolved</span>`;
+  }
+  if (isMarketClosed(market)) {
+    return `<span class="tag closed">Closed</span>`;
+  }
+  return `<span class="tag">Open</span>`;
+}
+
+function isMarketClosed(market) {
+  return new Date(`${market.deadline}T23:59:59`) < new Date();
+}
+
+function buildLeaderboard() {
+  const scores = new Map();
+  state.results.forEach((result) => {
+    state.predictions
+      .filter((prediction) => prediction.market_id === result.market_id)
+      .forEach((prediction) => {
+        const current = scores.get(prediction.user_name) || { name: prediction.user_name, total: 0, correct: 0 };
+        current.total += 1;
+        if (prediction.option_id === result.winning_option_id) current.correct += 1;
+        scores.set(prediction.user_name, current);
+      });
+  });
+
+  return [...scores.values()]
+    .map((row) => ({ ...row, rate: Math.round((row.correct / row.total) * 100) }))
+    .sort((a, b) => b.rate - a.rate || b.correct - a.correct || a.name.localeCompare(b.name))
+    .slice(0, 10);
+}
+
+function formatDate(value) {
+  return new Intl.DateTimeFormat("ja-JP", {
+    month: "short",
+    day: "numeric",
+  }).format(new Date(`${value}T00:00:00`));
+}
+
+function formatDateTime(value) {
+  return new Intl.DateTimeFormat("ja-JP", {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
 }
 
 function escapeHtml(value) {
-  return String(value).replace(/[&<>"']/g, (char) => {
+  return String(value ?? "").replace(/[&<>"']/g, (char) => {
     const entities = {
       "&": "&amp;",
       "<": "&lt;",
@@ -366,5 +774,3 @@ function escapeHtml(value) {
     return entities[char];
   });
 }
-
-renderAll();
