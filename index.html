@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>みんなの予想箱</title>
+    <meta
+      name="description"
+      content="選挙結果、スポーツ、経済、エンタメなどの未来をみんなで予想して集計できるサイトです。"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <a class="brand" href="#top" aria-label="みんなの予想箱 ホーム">
+        <span class="brand-mark" aria-hidden="true">予</span>
+        <span>みんなの予想箱</span>
+      </a>
+      <nav class="nav" aria-label="主要ナビゲーション">
+        <a href="#topics">予想テーマ</a>
+        <a href="#create">作成</a>
+        <a href="#activity">履歴</a>
+      </nav>
+    </header>
+
+    <main id="top">
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <p class="eyebrow">Crowd Forecasting</p>
+          <h1 id="hero-title">選挙結果も、次の出来事も、みんなで予想する。</h1>
+          <p>
+            政治、スポーツ、経済、エンタメなどのテーマを作り、
+            選択肢・確信度・理由を投稿できます。集計はその場で更新されます。
+          </p>
+          <div class="hero-actions">
+            <a class="button primary" href="#topics">予想に参加</a>
+            <a class="button secondary" href="#create">テーマを作る</a>
+          </div>
+        </div>
+
+        <aside class="live-panel" aria-label="注目テーマの集計">
+          <div class="panel-top">
+            <span class="status-dot"></span>
+            <span>LIVE CONSENSUS</span>
+          </div>
+          <h2>架空市長選 2026</h2>
+          <div class="forecast-bars" aria-hidden="true">
+            <div style="--value: 46">
+              <span>現職候補</span>
+              <b>46%</b>
+            </div>
+            <div style="--value: 34">
+              <span>新人候補</span>
+              <b>34%</b>
+            </div>
+            <div style="--value: 20">
+              <span>無所属候補</span>
+              <b>20%</b>
+            </div>
+          </div>
+          <canvas id="trendCanvas" width="540" height="220" aria-label="予想推移グラフ"></canvas>
+        </aside>
+      </section>
+
+      <section class="stats" aria-label="サイトの状態">
+        <article>
+          <span id="statTopics">0</span>
+          <p>公開中テーマ</p>
+        </article>
+        <article>
+          <span id="statPredictions">0</span>
+          <p>投稿された予想</p>
+        </article>
+        <article>
+          <span id="statAverage">0%</span>
+          <p>平均確信度</p>
+        </article>
+      </section>
+
+      <section id="topics" class="workspace" aria-labelledby="topics-title">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Topics</p>
+            <h2 id="topics-title">予想テーマ</h2>
+          </div>
+          <div class="filters" role="list" aria-label="カテゴリーフィルター">
+            <button class="filter active" type="button" data-filter="all">すべて</button>
+            <button class="filter" type="button" data-filter="選挙">選挙</button>
+            <button class="filter" type="button" data-filter="スポーツ">スポーツ</button>
+            <button class="filter" type="button" data-filter="経済">経済</button>
+            <button class="filter" type="button" data-filter="その他">その他</button>
+          </div>
+        </div>
+        <div id="topicGrid" class="topic-grid" aria-live="polite"></div>
+      </section>
+
+      <section id="create" class="create-section" aria-labelledby="create-title">
+        <div>
+          <p class="eyebrow">Create</p>
+          <h2 id="create-title">新しい予想テーマを作る</h2>
+          <p>
+            選択肢はカンマ区切りで入力してください。作成したテーマはこのブラウザに保存されます。
+          </p>
+        </div>
+        <form id="topicForm" class="topic-form">
+          <label>
+            テーマ名
+            <input name="title" required maxlength="64" placeholder="例: 次の国政選挙の投票率は？" />
+          </label>
+          <label>
+            カテゴリー
+            <select name="category">
+              <option>選挙</option>
+              <option>スポーツ</option>
+              <option>経済</option>
+              <option>エンタメ</option>
+              <option>その他</option>
+            </select>
+          </label>
+          <label>
+            締切
+            <input name="deadline" type="date" required />
+          </label>
+          <label class="wide">
+            選択肢
+            <input name="options" required placeholder="A候補, B候補, 50%以上, 50%未満" />
+          </label>
+          <label class="wide">
+            説明
+            <textarea
+              name="description"
+              rows="4"
+              maxlength="180"
+              placeholder="予想してほしい内容や判定条件を書いてください。"
+            ></textarea>
+          </label>
+          <button class="button primary wide" type="submit">テーマを公開</button>
+        </form>
+      </section>
+
+      <section id="activity" class="activity" aria-labelledby="activity-title">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Activity</p>
+            <h2 id="activity-title">最近の予想</h2>
+          </div>
+          <button id="resetButton" class="button ghost" type="button">デモデータに戻す</button>
+        </div>
+        <div id="activityList" class="activity-list" aria-live="polite"></div>
+      </section>
+    </main>
+
+    <dialog id="predictionDialog" class="dialog">
+      <form id="predictionForm" method="dialog">
+        <div class="dialog-head">
+          <div>
+            <p class="eyebrow">Prediction</p>
+            <h2 id="dialogTitle">予想する</h2>
+          </div>
+          <button class="icon-button" type="button" id="closeDialog" aria-label="閉じる">×</button>
+        </div>
+        <input type="hidden" name="topicId" />
+        <label>
+          あなたの名前
+          <input name="name" required maxlength="24" placeholder="例: yuki" />
+        </label>
+        <label>
+          予想
+          <select name="choice" required></select>
+        </label>
+        <label>
+          確信度: <span id="confidenceValue">60%</span>
+          <input name="confidence" type="range" min="10" max="100" value="60" step="5" />
+        </label>
+        <label>
+          理由
+          <textarea name="reason" rows="4" maxlength="160" placeholder="根拠や見立てを短く書いてください。"></textarea>
+        </label>
+        <button class="button primary" type="submit">予想を投稿</button>
+      </form>
+    </dialog>
+
+    <script src="./script.js"></script>
+  </body>
+</html>
