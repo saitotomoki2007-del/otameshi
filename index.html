@@ -54,6 +54,44 @@
             <span><b id="statResolved">0</b> 件の結果確定</span>
           </div>
         </div>
+        <form id="quickMarketForm" class="quick-create" aria-label="予想テーマを追加">
+          <div class="quick-create-head">
+            <div>
+              <strong>予想テーマを追加</strong>
+              <p>質問、選択肢、締切を入れるだけで公開できます。</p>
+            </div>
+            <button class="button dark" type="submit">追加する</button>
+          </div>
+          <label>
+            テーマ
+            <input name="title" required maxlength="90" placeholder="例: 次の国政選挙の投票率は55%を超える？" />
+          </label>
+          <div class="form-grid">
+            <label>
+              カテゴリ
+              <select name="category">
+                <option>選挙</option>
+                <option>スポーツ</option>
+                <option>経済</option>
+                <option>ニュース</option>
+                <option>エンタメ</option>
+                <option>その他</option>
+              </select>
+            </label>
+            <label>
+              締切
+              <input name="deadline" type="date" required />
+            </label>
+          </div>
+          <label>
+            選択肢
+            <input name="options" required placeholder="はい, いいえ または A候補, B候補" />
+          </label>
+          <label>
+            判定条件
+            <textarea name="description" rows="3" maxlength="220" placeholder="何をもって結果確定とするかを書いてください。"></textarea>
+          </label>
+        </form>
         <div id="marketList" class="market-list" aria-live="polite"></div>
       </section>
 

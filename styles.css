@@ -280,6 +280,35 @@ h1 {
   gap: 10px;
 }
 
+.quick-create {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  padding: 14px;
+}
+
+.quick-create-head {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.quick-create-head strong {
+  display: block;
+  margin-bottom: 2px;
+  font-size: 17px;
+}
+
+.quick-create-head p {
+  margin-bottom: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
 .market-card {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 220px;
@@ -652,6 +681,10 @@ a:focus-visible {
   .form-grid,
   .action-grid {
     grid-template-columns: 1fr;
+  }
+
+  .quick-create-head {
+    display: grid;
   }
 
   .button {

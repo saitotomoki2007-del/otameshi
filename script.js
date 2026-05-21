@@ -111,6 +111,7 @@ const els = {
   authForm: document.querySelector("#authForm"),
   createDialog: document.querySelector("#createDialog"),
   marketForm: document.querySelector("#marketForm"),
+  quickMarketForm: document.querySelector("#quickMarketForm"),
   predictDialog: document.querySelector("#predictDialog"),
   predictionForm: document.querySelector("#predictionForm"),
   resolveDialog: document.querySelector("#resolveDialog"),
@@ -129,7 +130,6 @@ async function init() {
 
 function bindEvents() {
   document.querySelector("#createMarketButton").addEventListener("click", () => {
-    if (!requireLogin()) return;
     els.createDialog.showModal();
   });
 
@@ -161,6 +161,12 @@ function bindEvents() {
 
   els.authForm.addEventListener("submit", handleAuth);
   els.marketForm.addEventListener("submit", handleMarketCreate);
+  els.quickMarketForm.addEventListener("submit", handleMarketCreate);
+  [els.marketForm, els.quickMarketForm].forEach((form) => {
+    form.elements.options.addEventListener("input", () => {
+      form.elements.options.setCustomValidity("");
+    });
+  });
   els.predictionForm.addEventListener("submit", handlePredictionCreate);
   els.resolveForm.addEventListener("submit", handleResolve);
 
@@ -469,9 +475,14 @@ async function signOut() {
 
 async function handleMarketCreate(event) {
   event.preventDefault();
-  if (!requireLogin()) return;
+  if (db && !requireLogin()) return;
+  if (!db && !state.profile) {
+    state.profile = { id: `demo-${Date.now()}`, display_name: "ゲスト" };
+    localStorage.setItem("yosou-demo-profile", JSON.stringify(state.profile));
+  }
 
-  const formData = new FormData(els.marketForm);
+  const form = event.currentTarget;
+  const formData = new FormData(form);
   const options = String(formData.get("options"))
     .split(",")
     .map((item) => item.trim())
@@ -479,11 +490,11 @@ async function handleMarketCreate(event) {
     .slice(0, 8);
 
   if (options.length < 2) {
-    els.marketForm.elements.options.setCustomValidity("選択肢を2つ以上入力してください。");
-    els.marketForm.elements.options.reportValidity();
+    form.elements.options.setCustomValidity("選択肢を2つ以上入力してください。");
+    form.elements.options.reportValidity();
     return;
   }
-  els.marketForm.elements.options.setCustomValidity("");
+  form.elements.options.setCustomValidity("");
 
   const market = {
     id: crypto.randomUUID(),
@@ -533,8 +544,12 @@ async function handleMarketCreate(event) {
     state.selectedMarketId = market.id;
   }
 
-  els.marketForm.reset();
-  els.createDialog.close();
+  state.category = "all";
+  document.querySelectorAll(".topic-tab").forEach((item) => {
+    item.classList.toggle("active", item.dataset.category === "all");
+  });
+  form.reset();
+  if (form === els.marketForm) els.createDialog.close();
   render();
 }
 
