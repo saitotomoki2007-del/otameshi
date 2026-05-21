@@ -2,6 +2,8 @@ const STORAGE_KEY = "yosou-markets-demo-v2";
 const config = window.YOSOUBOX_CONFIG || {};
 const hasSupabaseConfig = Boolean(config.supabaseUrl && config.supabaseAnonKey && window.supabase);
 const db = hasSupabaseConfig ? window.supabase.createClient(config.supabaseUrl, config.supabaseAnonKey) : null;
+const STARTING_POINTS = 100;
+const WIN_PAYOUT_MULTIPLIER = 2;
 
 const seedData = {
   markets: [
@@ -67,14 +69,14 @@ const seedData = {
     { id: "o-award-movie", market_id: "m-award", label: "映画", sort_order: 2 },
   ],
   predictions: [
-    { id: "p1", market_id: "m-election", option_id: "o-election-yes", user_name: "akari", confidence: 62, reason: "物価と社会保障が争点化して関心が高い。", created_at: "2026-05-20T11:00:00Z" },
-    { id: "p2", market_id: "m-election", option_id: "o-election-no", user_name: "ren", confidence: 55, reason: "無党派層の熱量がまだ弱い。", created_at: "2026-05-20T12:00:00Z" },
-    { id: "p3", market_id: "m-mayor", option_id: "o-mayor-a", user_name: "mika", confidence: 70, reason: "現職の地盤が崩れていない。", created_at: "2026-05-20T13:00:00Z" },
-    { id: "p4", market_id: "m-mayor", option_id: "o-mayor-b", user_name: "sota", confidence: 58, reason: "討論会後に新人の認知が伸びた。", created_at: "2026-05-20T14:00:00Z" },
-    { id: "p5", market_id: "m-cup", option_id: "o-cup-east", user_name: "taku", confidence: 80, reason: "守備の安定感が抜けている。", created_at: "2026-05-20T15:00:00Z" },
-    { id: "p6", market_id: "m-yen", option_id: "o-yen-yes", user_name: "hiro", confidence: 48, reason: "金利差が急には縮まらない。", created_at: "2026-05-20T16:00:00Z" },
-    { id: "p7", market_id: "m-award", option_id: "o-award-anime", user_name: "rio", confidence: 72, reason: "海外での拡散が大きい。", created_at: "2026-05-20T17:00:00Z" },
-    { id: "p8", market_id: "m-award", option_id: "o-award-game", user_name: "yui", confidence: 45, reason: "大型タイトルの発売が続く。", created_at: "2026-05-20T18:00:00Z" },
+    { id: "p1", market_id: "m-election", option_id: "o-election-yes", user_name: "akari", confidence: 62, stake: 12, reason: "物価と社会保障が争点化して関心が高い。", created_at: "2026-05-20T11:00:00Z" },
+    { id: "p2", market_id: "m-election", option_id: "o-election-no", user_name: "ren", confidence: 55, stake: 10, reason: "無党派層の熱量がまだ弱い。", created_at: "2026-05-20T12:00:00Z" },
+    { id: "p3", market_id: "m-mayor", option_id: "o-mayor-a", user_name: "mika", confidence: 70, stake: 18, reason: "現職の地盤が崩れていない。", created_at: "2026-05-20T13:00:00Z" },
+    { id: "p4", market_id: "m-mayor", option_id: "o-mayor-b", user_name: "sota", confidence: 58, stake: 8, reason: "討論会後に新人の認知が伸びた。", created_at: "2026-05-20T14:00:00Z" },
+    { id: "p5", market_id: "m-cup", option_id: "o-cup-east", user_name: "taku", confidence: 80, stake: 20, reason: "守備の安定感が抜けている。", created_at: "2026-05-20T15:00:00Z" },
+    { id: "p6", market_id: "m-yen", option_id: "o-yen-yes", user_name: "hiro", confidence: 48, stake: 7, reason: "金利差が急には縮まらない。", created_at: "2026-05-20T16:00:00Z" },
+    { id: "p7", market_id: "m-award", option_id: "o-award-anime", user_name: "rio", confidence: 72, stake: 16, reason: "海外での拡散が大きい。", created_at: "2026-05-20T17:00:00Z" },
+    { id: "p8", market_id: "m-award", option_id: "o-award-game", user_name: "yui", confidence: 45, stake: 12, reason: "大型タイトルの発売が続く。", created_at: "2026-05-20T18:00:00Z" },
   ],
   comments: [
     { id: "c1", market_id: "m-election", user_name: "kei", body: "期日前投票の数字が出たらかなり動きそう。", created_at: "2026-05-20T19:00:00Z" },
@@ -106,6 +108,7 @@ const els = {
   leaderboardList: document.querySelector("#leaderboardList"),
   searchInput: document.querySelector("#searchInput"),
   connectionBadge: document.querySelector("#connectionBadge"),
+  pointBadge: document.querySelector("#pointBadge"),
   loginButton: document.querySelector("#loginButton"),
   authDialog: document.querySelector("#authDialog"),
   authForm: document.querySelector("#authForm"),
@@ -117,6 +120,7 @@ const els = {
   resolveDialog: document.querySelector("#resolveDialog"),
   resolveForm: document.querySelector("#resolveForm"),
   confidenceValue: document.querySelector("#confidenceValue"),
+  stakeHelp: document.querySelector("#stakeHelp"),
 };
 
 init();
@@ -173,12 +177,15 @@ function bindEvents() {
   els.predictionForm.elements.confidence.addEventListener("input", () => {
     els.confidenceValue.textContent = `${els.predictionForm.elements.confidence.value}%`;
   });
+  els.predictionForm.elements.stake.addEventListener("input", () => {
+    els.predictionForm.elements.stake.setCustomValidity("");
+  });
 }
 
 async function loadSession() {
   if (!db) {
     const localProfile = JSON.parse(localStorage.getItem("yosou-demo-profile") || "null");
-    state.profile = localProfile;
+    state.profile = localProfile ? normalizeProfile(localProfile) : null;
     return;
   }
 
@@ -188,7 +195,7 @@ async function loadSession() {
 
   const { data: profile } = await db.from("profiles").select("*").eq("id", state.user.id).maybeSingle();
   if (profile) {
-    state.profile = profile;
+    state.profile = normalizeProfile(profile);
     return;
   }
 
@@ -198,16 +205,17 @@ async function loadSession() {
     "ユーザー";
   const { data: createdProfile } = await db
     .from("profiles")
-    .insert({ id: state.user.id, display_name: displayName })
+    .insert({ id: state.user.id, display_name: displayName, starting_points: STARTING_POINTS })
     .select("*")
     .single();
-  state.profile = createdProfile || { id: state.user.id, display_name: displayName };
+  state.profile = normalizeProfile(createdProfile || { id: state.user.id, display_name: displayName });
 }
 
 async function loadData() {
   if (!db) {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
     Object.assign(state, saved || structuredClone(seedData));
+    normalizeStateData();
     state.selectedMarketId ||= state.markets[0]?.id || null;
     return;
   }
@@ -234,6 +242,7 @@ async function loadData() {
   state.predictions = predictions.data;
   state.comments = comments.data;
   state.results = results.data;
+  normalizeStateData();
   state.selectedMarketId ||= state.markets[0]?.id || null;
 }
 
@@ -252,6 +261,7 @@ function saveDemoData() {
 function render() {
   els.connectionBadge.textContent = state.mode === "supabase" ? "共有保存" : "デモ保存";
   els.connectionBadge.classList.toggle("muted", state.mode !== "supabase");
+  els.pointBadge.textContent = state.profile ? `${getCurrentPointBalance()} pt` : `${STARTING_POINTS} pt`;
   els.loginButton.textContent = state.profile ? `${state.profile.display_name} / ログアウト` : "ログイン";
   renderStats();
   renderMarkets();
@@ -347,6 +357,10 @@ function renderDetail() {
       </div>
       <h2>${escapeHtml(market.title)}</h2>
       <p>${escapeHtml(market.description || "説明はありません。")}</p>
+      <div class="point-summary">
+        <strong>${state.profile ? `${getCurrentPointBalance()} pt` : `${STARTING_POINTS} pt`}</strong>
+        <span>保有ポイント。予想が当たると賭けたポイントの${WIN_PAYOUT_MULTIPLIER}倍が戻ります。</span>
+      </div>
       <div class="price-stack">
         ${options
           .map((option) => {
@@ -412,7 +426,7 @@ function renderComments(marketId) {
 function renderLeaderboard() {
   const rows = buildLeaderboard();
   if (!rows.length) {
-    els.leaderboardList.innerHTML = `<div class="empty">結果が確定した予想テーマの的中者がまだいません。</div>`;
+    els.leaderboardList.innerHTML = `<div class="empty">ポイントを持つ参加者がまだいません。</div>`;
     return;
   }
 
@@ -421,7 +435,7 @@ function renderLeaderboard() {
       (row, index) => `
         <div class="leaderboard-row">
           <strong>${index + 1}. ${escapeHtml(row.name)}</strong>
-          <span>${row.rate}% (${row.correct}/${row.total})</span>
+          <span>${row.points} pt / 的中 ${row.correct}/${row.resolved}</span>
         </div>
       `,
     )
@@ -435,7 +449,7 @@ async function handleAuth(event) {
   const email = String(formData.get("email") || "").trim();
 
   if (!db) {
-    state.profile = { id: `demo-${Date.now()}`, display_name: displayName };
+    state.profile = { id: `demo-${Date.now()}`, display_name: displayName, starting_points: STARTING_POINTS };
     localStorage.setItem("yosou-demo-profile", JSON.stringify(state.profile));
     els.authDialog.close();
     render();
@@ -477,7 +491,7 @@ async function handleMarketCreate(event) {
   event.preventDefault();
   if (db && !requireLogin()) return;
   if (!db && !state.profile) {
-    state.profile = { id: `demo-${Date.now()}`, display_name: "ゲスト" };
+    state.profile = { id: `demo-${Date.now()}`, display_name: "ゲスト", starting_points: STARTING_POINTS };
     localStorage.setItem("yosou-demo-profile", JSON.stringify(state.profile));
   }
 
@@ -558,13 +572,28 @@ async function handlePredictionCreate(event) {
   if (!requireLogin()) return;
 
   const formData = new FormData(els.predictionForm);
+  const stake = Math.floor(Number(formData.get("stake")));
+  const balance = getCurrentPointBalance();
+  if (!Number.isFinite(stake) || stake < 1) {
+    els.predictionForm.elements.stake.setCustomValidity("1ポイント以上を入力してください。");
+    els.predictionForm.elements.stake.reportValidity();
+    return;
+  }
+  if (stake > balance) {
+    els.predictionForm.elements.stake.setCustomValidity(`保有ポイントは${balance}ポイントです。`);
+    els.predictionForm.elements.stake.reportValidity();
+    return;
+  }
+  els.predictionForm.elements.stake.setCustomValidity("");
+
   const prediction = {
     id: crypto.randomUUID(),
     market_id: String(formData.get("marketId")),
     option_id: String(formData.get("optionId")),
-    user_id: state.user?.id || null,
+    user_id: state.user?.id || state.profile?.id || null,
     user_name: currentName(),
     confidence: Number(formData.get("confidence")),
+    stake,
     reason: String(formData.get("reason")).trim(),
     created_at: new Date().toISOString(),
   };
@@ -576,6 +605,7 @@ async function handlePredictionCreate(event) {
       user_id: state.user.id,
       user_name: prediction.user_name,
       confidence: prediction.confidence,
+      stake: prediction.stake,
       reason: prediction.reason,
     });
     if (error) return alert(error.message);
@@ -666,6 +696,14 @@ function openPredict(marketId, optionId = null) {
   if (optionId) els.predictionForm.elements.optionId.value = optionId;
   els.predictionForm.elements.confidence.value = 65;
   els.confidenceValue.textContent = "65%";
+  const balance = getCurrentPointBalance();
+  els.predictionForm.elements.stake.max = Math.max(balance, 1);
+  els.predictionForm.elements.stake.value = Math.min(10, Math.max(balance, 1));
+  els.stakeHelp.textContent =
+    balance > 0
+      ? `保有ポイントは${balance}ptです。当たると賭けたポイントの${WIN_PAYOUT_MULTIPLIER}倍が戻ります。`
+      : "保有ポイントがないため、いまは予想できません。";
+  els.predictionForm.querySelector('button[type="submit"]').disabled = balance < 1;
   els.predictDialog.showModal();
 }
 
@@ -744,21 +782,84 @@ function isMarketClosed(market) {
 
 function buildLeaderboard() {
   const scores = new Map();
-  state.results.forEach((result) => {
-    state.predictions
-      .filter((prediction) => prediction.market_id === result.market_id)
-      .forEach((prediction) => {
-        const current = scores.get(prediction.user_name) || { name: prediction.user_name, total: 0, correct: 0 };
-        current.total += 1;
-        if (prediction.option_id === result.winning_option_id) current.correct += 1;
-        scores.set(prediction.user_name, current);
-      });
+
+  state.predictions.forEach((prediction) => {
+    const key = prediction.user_id || prediction.user_name;
+    const current = scores.get(key) || {
+      key,
+      name: prediction.user_name,
+      total: 0,
+      resolved: 0,
+      correct: 0,
+      points: STARTING_POINTS,
+    };
+    const stake = getStake(prediction);
+    const result = getResult(prediction.market_id);
+
+    current.total += 1;
+    current.points -= stake;
+    if (result) {
+      current.resolved += 1;
+      if (prediction.option_id === result.winning_option_id) {
+        current.correct += 1;
+        current.points += stake * WIN_PAYOUT_MULTIPLIER;
+      }
+    }
+    scores.set(key, current);
   });
 
   return [...scores.values()]
-    .map((row) => ({ ...row, rate: Math.round((row.correct / row.total) * 100) }))
-    .sort((a, b) => b.rate - a.rate || b.correct - a.correct || a.name.localeCompare(b.name))
+    .sort((a, b) => b.points - a.points || b.correct - a.correct || a.name.localeCompare(b.name))
     .slice(0, 10);
+}
+
+function getCurrentPointBalance() {
+  if (!state.profile && !state.user) return STARTING_POINTS;
+  return getUserPointBalance(getCurrentUserKey(), currentName(), state.profile?.starting_points);
+}
+
+function getUserPointBalance(userKey, userName, startingPoints = STARTING_POINTS) {
+  let points = Number(startingPoints) || STARTING_POINTS;
+  getUserPredictions(userKey, userName).forEach((prediction) => {
+    const stake = getStake(prediction);
+    const result = getResult(prediction.market_id);
+    points -= stake;
+    if (result && prediction.option_id === result.winning_option_id) {
+      points += stake * WIN_PAYOUT_MULTIPLIER;
+    }
+  });
+  return Math.max(0, points);
+}
+
+function getUserPredictions(userKey, userName) {
+  return state.predictions.filter((prediction) => {
+    if (prediction.user_id && userKey) return prediction.user_id === userKey;
+    return prediction.user_name === userName;
+  });
+}
+
+function getCurrentUserKey() {
+  return state.user?.id || state.profile?.id || null;
+}
+
+function getStake(prediction) {
+  const stake = Math.floor(Number(prediction.stake || 0));
+  return Number.isFinite(stake) && stake > 0 ? stake : 0;
+}
+
+function normalizeProfile(profile) {
+  return {
+    ...profile,
+    starting_points: Number(profile.starting_points || STARTING_POINTS),
+  };
+}
+
+function normalizeStateData() {
+  state.predictions = state.predictions.map((prediction) => ({
+    ...prediction,
+    stake: getStake(prediction),
+  }));
+  if (state.profile) state.profile = normalizeProfile(state.profile);
 }
 
 function formatDate(value) {

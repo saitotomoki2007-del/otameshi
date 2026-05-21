@@ -164,6 +164,11 @@ button {
   color: var(--muted);
 }
 
+.point-badge {
+  background: #fff4d8;
+  color: #8a5a07;
+}
+
 .shell {
   display: grid;
   grid-template-columns: 210px minmax(0, 1fr) minmax(330px, 390px);
@@ -509,6 +514,27 @@ h1 {
   font-weight: 950;
 }
 
+.point-summary {
+  display: grid;
+  gap: 6px;
+  margin: 12px 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-soft);
+  padding: 12px;
+}
+
+.point-summary strong {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.point-summary span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
 .dialog {
   width: min(560px, calc(100% - 28px));
   border: 0;
@@ -630,6 +656,10 @@ a:focus-visible {
 
   .badge {
     display: none;
+  }
+
+  .point-badge {
+    display: inline-flex;
   }
 
   .shell {

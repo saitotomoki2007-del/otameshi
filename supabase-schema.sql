@@ -3,6 +3,7 @@ create extension if not exists pgcrypto;
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   display_name text not null,
+  starting_points int not null default 100 check (starting_points >= 0),
   created_at timestamptz not null default now()
 );
 
@@ -32,9 +33,16 @@ create table if not exists public.predictions (
   user_id uuid references auth.users(id) on delete set null,
   user_name text not null,
   confidence int not null check (confidence between 1 and 100),
+  stake int not null default 1 check (stake > 0),
   reason text,
   created_at timestamptz not null default now()
 );
+
+alter table public.profiles
+  add column if not exists starting_points int not null default 100 check (starting_points >= 0);
+
+alter table public.predictions
+  add column if not exists stake int not null default 1 check (stake > 0);
 
 create table if not exists public.comments (
   id uuid primary key default gen_random_uuid(),

@@ -22,6 +22,7 @@
       </label>
       <div class="topbar-actions">
         <span id="connectionBadge" class="badge muted">デモ保存</span>
+        <span id="pointBadge" class="badge point-badge">100 pt</span>
         <button id="createMarketButton" class="button ghost" type="button">テーマ作成</button>
         <button id="loginButton" class="button dark" type="button">ログイン</button>
       </div>
@@ -99,8 +100,8 @@
         <section id="marketDetail" class="detail-card"></section>
         <section class="leaderboard-card">
           <div class="card-head">
-            <h2>的中率ランキング</h2>
-            <span id="rankingScope">結果確定済み</span>
+            <h2>ポイントランキング</h2>
+            <span id="rankingScope">的中で増える</span>
           </div>
           <div id="leaderboardList" class="leaderboard-list"></div>
         </section>
@@ -117,7 +118,8 @@
           <button class="icon-button" type="button" data-close="authDialog" aria-label="閉じる">×</button>
         </div>
         <p id="authHelp" class="help-text">
-          共有データベース設定済みならメールでログインします。未設定の間は表示名だけでデモログインできます。
+          アカウントを作ると100ポイントから始まります。ポイントに現金価値はありません。
+          共有データベース設定済みならメールでログインします。
         </p>
         <label>
           表示名
@@ -191,6 +193,11 @@
           確信度 <span id="confidenceValue">65%</span>
           <input name="confidence" type="range" min="10" max="100" value="65" step="5" />
         </label>
+        <label>
+          賭けるポイント
+          <input name="stake" type="number" min="1" max="100" value="10" required />
+        </label>
+        <p id="stakeHelp" class="help-text">当たると賭けたポイントの2倍が戻ります。</p>
         <label>
           根拠
           <textarea name="reason" rows="4" maxlength="180" placeholder="根拠や見立てを短く書いてください。"></textarea>
