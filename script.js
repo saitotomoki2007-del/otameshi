@@ -9,7 +9,7 @@ const seedData = {
       id: "m-election",
       title: "次の国政選挙の投票率は55%を超える？",
       category: "選挙",
-      description: "争点、天候、期日前投票の伸びを見ながら投票率を予想するマーケット。",
+      description: "争点、天候、期日前投票の伸びを見ながら投票率を予想するテーマ。",
       deadline: "2026-10-01",
       status: "open",
       created_at: "2026-05-20T10:00:00Z",
@@ -189,7 +189,7 @@ async function loadSession() {
   const displayName =
     state.user.user_metadata?.display_name ||
     state.user.email?.split("@")[0] ||
-    "user";
+    "ユーザー";
   const { data: createdProfile } = await db
     .from("profiles")
     .insert({ id: state.user.id, display_name: displayName })
@@ -217,7 +217,7 @@ async function loadData() {
   const failed = [markets, options, predictions, comments, results].find((response) => response.error);
   if (failed) {
     console.error(failed.error);
-    alert("Supabaseからデータを読み込めませんでした。schema SQLとRLS設定を確認してください。");
+    alert("共有データベースから読み込めませんでした。SQLとアクセス権設定を確認してください。");
     Object.assign(state, structuredClone(seedData));
     state.mode = "demo";
     return;
@@ -244,7 +244,7 @@ function saveDemoData() {
 }
 
 function render() {
-  els.connectionBadge.textContent = state.mode === "supabase" ? "Shared DB" : "Demo DB";
+  els.connectionBadge.textContent = state.mode === "supabase" ? "共有保存" : "デモ保存";
   els.connectionBadge.classList.toggle("muted", state.mode !== "supabase");
   els.loginButton.textContent = state.profile ? `${state.profile.display_name} / ログアウト` : "ログイン";
   renderStats();
@@ -270,7 +270,7 @@ function getVisibleMarkets() {
 function renderMarkets() {
   const visible = getVisibleMarkets();
   if (!visible.length) {
-    els.marketList.innerHTML = `<div class="empty">該当するマーケットはありません。</div>`;
+    els.marketList.innerHTML = `<div class="empty">該当する予想テーマはありません。</div>`;
     return;
   }
 
@@ -284,7 +284,7 @@ function renderMarkets() {
             <div class="market-meta">
               <span class="tag">${escapeHtml(market.category)}</span>
               ${statusTag}
-              <span class="tag">${getPredictionCount(market.id)} forecasts</span>
+              <span class="tag">${getPredictionCount(market.id)}件の予想</span>
             </div>
             <h2 class="market-title">${escapeHtml(market.title)}</h2>
             <p class="market-desc">${escapeHtml(market.description || "説明はありません。")}</p>
@@ -324,7 +324,7 @@ function renderMarkets() {
 function renderDetail() {
   const market = getSelectedMarket();
   if (!market) {
-    els.marketDetail.innerHTML = `<div class="detail-main"><p>マーケットを選択してください。</p></div>`;
+    els.marketDetail.innerHTML = `<div class="detail-main"><p>予想テーマを選択してください。</p></div>`;
     return;
   }
 
@@ -337,7 +337,7 @@ function renderDetail() {
       <div class="market-meta">
         <span class="tag">${escapeHtml(market.category)}</span>
         ${getStatusTag(market)}
-        <span class="tag">Ends ${formatDate(market.deadline)}</span>
+        <span class="tag">締切 ${formatDate(market.deadline)}</span>
       </div>
       <h2>${escapeHtml(market.title)}</h2>
       <p>${escapeHtml(market.description || "説明はありません。")}</p>
@@ -370,7 +370,7 @@ function renderDetail() {
         ${renderComments(market.id)}
       </div>
       <form class="comment-form" data-comment-form="${market.id}">
-        <textarea name="body" rows="3" maxlength="220" placeholder="このマーケットについてコメント"></textarea>
+        <textarea name="body" rows="3" maxlength="220" placeholder="この予想テーマについてコメント"></textarea>
         <button class="button dark" type="submit">投稿</button>
       </form>
     </div>
@@ -406,7 +406,7 @@ function renderComments(marketId) {
 function renderLeaderboard() {
   const rows = buildLeaderboard();
   if (!rows.length) {
-    els.leaderboardList.innerHTML = `<div class="empty">確定済みマーケットの的中者がまだいません。</div>`;
+    els.leaderboardList.innerHTML = `<div class="empty">結果が確定した予想テーマの的中者がまだいません。</div>`;
     return;
   }
 
@@ -425,7 +425,7 @@ function renderLeaderboard() {
 async function handleAuth(event) {
   event.preventDefault();
   const formData = new FormData(els.authForm);
-  const displayName = String(formData.get("displayName") || "").trim() || "guest";
+  const displayName = String(formData.get("displayName") || "").trim() || "ゲスト";
   const email = String(formData.get("email") || "").trim();
 
   if (!db) {
@@ -673,7 +673,7 @@ function requireLogin() {
 }
 
 function currentName() {
-  return state.profile?.display_name || state.user?.email || "guest";
+  return state.profile?.display_name || state.user?.email || "ゲスト";
 }
 
 function getSelectedMarket() {
@@ -715,12 +715,12 @@ function getOptionLabel(optionId) {
 
 function getStatusTag(market) {
   if (market.status === "resolved" || getResult(market.id)) {
-    return `<span class="tag resolved">Resolved</span>`;
+    return `<span class="tag resolved">結果確定</span>`;
   }
   if (isMarketClosed(market)) {
-    return `<span class="tag closed">Closed</span>`;
+    return `<span class="tag closed">締切済み</span>`;
   }
-  return `<span class="tag">Open</span>`;
+  return `<span class="tag">受付中</span>`;
 }
 
 function isMarketClosed(market) {

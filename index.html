@@ -3,66 +3,66 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Yosou Markets</title>
+    <title>みんなの予想市場</title>
     <meta
       name="description"
-      content="選挙、スポーツ、経済、ニュースをみんなで予想するマーケット型コミュニティです。"
+      content="選挙、スポーツ、経済、ニュースをみんなで予想するコミュニティサイトです。"
     />
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
     <header class="topbar">
-      <a class="brand" href="#markets" aria-label="Yosou Markets">
-        <span class="brand-mark">Y</span>
-        <span>Yosou Markets</span>
+      <a class="brand" href="#markets" aria-label="みんなの予想市場">
+        <span class="brand-mark">予</span>
+        <span>みんなの予想市場</span>
       </a>
       <label class="search">
         <span aria-hidden="true">⌕</span>
-        <input id="searchInput" type="search" placeholder="マーケットを検索" />
+        <input id="searchInput" type="search" placeholder="予想テーマを検索" />
       </label>
       <div class="topbar-actions">
-        <span id="connectionBadge" class="badge muted">Demo DB</span>
-        <button id="createMarketButton" class="button ghost" type="button">作成</button>
+        <span id="connectionBadge" class="badge muted">デモ保存</span>
+        <button id="createMarketButton" class="button ghost" type="button">テーマ作成</button>
         <button id="loginButton" class="button dark" type="button">ログイン</button>
       </div>
     </header>
 
     <main class="shell">
       <aside class="sidebar" aria-label="カテゴリ">
-        <button class="topic-tab active" type="button" data-category="all">Trending</button>
-        <button class="topic-tab" type="button" data-category="選挙">Politics</button>
-        <button class="topic-tab" type="button" data-category="スポーツ">Sports</button>
-        <button class="topic-tab" type="button" data-category="経済">Finance</button>
-        <button class="topic-tab" type="button" data-category="ニュース">News</button>
-        <button class="topic-tab" type="button" data-category="エンタメ">Culture</button>
-        <button class="topic-tab" type="button" data-category="その他">Other</button>
+        <button class="topic-tab active" type="button" data-category="all">注目</button>
+        <button class="topic-tab" type="button" data-category="選挙">選挙</button>
+        <button class="topic-tab" type="button" data-category="スポーツ">スポーツ</button>
+        <button class="topic-tab" type="button" data-category="経済">経済</button>
+        <button class="topic-tab" type="button" data-category="ニュース">ニュース</button>
+        <button class="topic-tab" type="button" data-category="エンタメ">エンタメ</button>
+        <button class="topic-tab" type="button" data-category="その他">その他</button>
         <div class="sidebar-card">
-          <strong>共有DB</strong>
-          <p>Supabase設定を入れると、投稿・コメント・ランキングが全員に共有されます。</p>
+          <strong>いまの保存先</strong>
+          <p>「デモ保存」は自分のブラウザ内だけに保存されます。共有データベースを設定すると全員で共有できます。</p>
         </div>
       </aside>
 
       <section id="markets" class="market-column" aria-labelledby="marketTitle">
         <div class="column-head">
           <div>
-            <p class="eyebrow">Prediction Markets</p>
-            <h1 id="marketTitle">注目マーケット</h1>
+            <p class="eyebrow">みんなの予想</p>
+            <h1 id="marketTitle">注目の予想テーマ</h1>
           </div>
           <div class="stats-strip" aria-label="統計">
-            <span><b id="statMarkets">0</b> markets</span>
-            <span><b id="statPredictions">0</b> predictions</span>
-            <span><b id="statResolved">0</b> resolved</span>
+            <span><b id="statMarkets">0</b> 件のテーマ</span>
+            <span><b id="statPredictions">0</b> 件の予想</span>
+            <span><b id="statResolved">0</b> 件の結果確定</span>
           </div>
         </div>
         <div id="marketList" class="market-list" aria-live="polite"></div>
       </section>
 
-      <aside class="detail-column" aria-label="マーケット詳細">
+      <aside class="detail-column" aria-label="予想テーマ詳細">
         <section id="marketDetail" class="detail-card"></section>
         <section class="leaderboard-card">
           <div class="card-head">
             <h2>的中率ランキング</h2>
-            <span id="rankingScope">Resolved</span>
+            <span id="rankingScope">結果確定済み</span>
           </div>
           <div id="leaderboardList" class="leaderboard-list"></div>
         </section>
@@ -73,13 +73,13 @@
       <form id="authForm" class="dialog-body">
         <div class="dialog-head">
           <div>
-            <p class="eyebrow">Account</p>
+            <p class="eyebrow">アカウント</p>
             <h2>ログイン</h2>
           </div>
           <button class="icon-button" type="button" data-close="authDialog" aria-label="閉じる">×</button>
         </div>
         <p id="authHelp" class="help-text">
-          Supabase接続時はメールのマジックリンクでログインします。未設定時はデモ名でログインします。
+          共有データベース設定済みならメールでログインします。未設定の間は表示名だけでデモログインできます。
         </p>
         <label>
           表示名
@@ -97,8 +97,8 @@
       <form id="marketForm" class="dialog-body">
         <div class="dialog-head">
           <div>
-            <p class="eyebrow">New Market</p>
-            <h2>マーケット作成</h2>
+            <p class="eyebrow">新しいテーマ</p>
+            <h2>予想テーマを作成</h2>
           </div>
           <button class="icon-button" type="button" data-close="createDialog" aria-label="閉じる">×</button>
         </div>
@@ -125,7 +125,7 @@
         </div>
         <label>
           選択肢
-          <input name="options" required placeholder="Yes, No または A候補, B候補" />
+          <input name="options" required placeholder="はい, いいえ または A候補, B候補" />
         </label>
         <label>
           判定条件
@@ -139,7 +139,7 @@
       <form id="predictionForm" class="dialog-body">
         <div class="dialog-head">
           <div>
-            <p class="eyebrow">Forecast</p>
+            <p class="eyebrow">予想投稿</p>
             <h2 id="predictionTitle">予想する</h2>
           </div>
           <button class="icon-button" type="button" data-close="predictDialog" aria-label="閉じる">×</button>
@@ -165,7 +165,7 @@
       <form id="resolveForm" class="dialog-body">
         <div class="dialog-head">
           <div>
-            <p class="eyebrow">Resolve</p>
+            <p class="eyebrow">結果確定</p>
             <h2>結果を確定</h2>
           </div>
           <button class="icon-button" type="button" data-close="resolveDialog" aria-label="閉じる">×</button>
