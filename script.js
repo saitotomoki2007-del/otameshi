@@ -94,6 +94,7 @@ const state = {
   predictions: [],
   comments: [],
   results: [],
+  profiles: [],
   category: "all",
   query: "",
   selectedMarketId: null,
@@ -220,15 +221,16 @@ async function loadData() {
     return;
   }
 
-  const [markets, options, predictions, comments, results] = await Promise.all([
+  const [markets, options, predictions, comments, results, profiles] = await Promise.all([
     db.from("markets").select("*").order("created_at", { ascending: false }),
     db.from("market_options").select("*").order("sort_order", { ascending: true }),
     db.from("predictions").select("*").order("created_at", { ascending: true }),
     db.from("comments").select("*").order("created_at", { ascending: true }),
     db.from("market_results").select("*"),
+    db.from("profiles").select("*").order("created_at", { ascending: true }),
   ]);
 
-  const failed = [markets, options, predictions, comments, results].find((response) => response.error);
+  const failed = [markets, options, predictions, comments, results, profiles].find((response) => response.error);
   if (failed) {
     console.error(failed.error);
     alert("共有データベースから読み込めませんでした。SQLとアクセス権設定を確認してください。");
@@ -242,6 +244,7 @@ async function loadData() {
   state.predictions = predictions.data;
   state.comments = comments.data;
   state.results = results.data;
+  state.profiles = profiles.data.map(normalizeProfile);
   normalizeStateData();
   state.selectedMarketId ||= state.markets[0]?.id || null;
 }
@@ -254,6 +257,7 @@ function saveDemoData() {
     predictions: state.predictions,
     comments: state.comments,
     results: state.results,
+    profiles: state.profiles,
   };
   localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
 }
@@ -426,7 +430,7 @@ function renderComments(marketId) {
 function renderLeaderboard() {
   const rows = buildLeaderboard();
   if (!rows.length) {
-    els.leaderboardList.innerHTML = `<div class="empty">ポイントを持つ参加者がまだいません。</div>`;
+    els.leaderboardList.innerHTML = `<div class="empty">まだランキングに表示できる参加者がいません。</div>`;
     return;
   }
 
@@ -434,8 +438,11 @@ function renderLeaderboard() {
     .map(
       (row, index) => `
         <div class="leaderboard-row">
-          <strong>${index + 1}. ${escapeHtml(row.name)}</strong>
-          <span>${row.points} pt / 的中 ${row.correct}/${row.resolved}</span>
+          <div>
+            <strong>${index + 1}. ${escapeHtml(row.name)}</strong>
+            <small>${row.total}件予想 / 的中 ${row.correct}/${row.resolved}</small>
+          </div>
+          <span>${row.points} pt</span>
         </div>
       `,
     )
@@ -782,6 +789,29 @@ function isMarketClosed(market) {
 
 function buildLeaderboard() {
   const scores = new Map();
+
+  state.profiles.forEach((profile) => {
+    scores.set(profile.id, {
+      key: profile.id,
+      name: profile.display_name,
+      total: 0,
+      resolved: 0,
+      correct: 0,
+      points: Number(profile.starting_points) || STARTING_POINTS,
+    });
+  });
+
+  if (state.profile) {
+    const key = getCurrentUserKey() || state.profile.display_name;
+    scores.set(key, {
+      key,
+      name: currentName(),
+      total: 0,
+      resolved: 0,
+      correct: 0,
+      points: Number(state.profile.starting_points) || STARTING_POINTS,
+    });
+  }
 
   state.predictions.forEach((prediction) => {
     const key = prediction.user_id || prediction.user_name;

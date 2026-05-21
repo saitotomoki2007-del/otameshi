@@ -503,15 +503,28 @@ h1 {
   font-size: 14px;
 }
 
+.leaderboard-row div {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
 .leaderboard-row strong {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+.leaderboard-row small {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 750;
+}
+
 .leaderboard-row span {
   color: var(--green);
   font-weight: 950;
+  white-space: nowrap;
 }
 
 .point-summary {
